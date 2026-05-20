@@ -1,0 +1,2023 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GLM-5 Technical Report Seminar</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+
+<body>
+  <main class="deck" aria-live="polite">
+    <section class="slide title-slide is-active" data-title="GLM-5">
+      <div class="title-layout title-layout-clean">
+        <div class="title-copy title-copy-clean">
+          <p class="eyebrow">LLM Technical Report Seminar</p>
+          <h1>GLM-5</h1>
+          <p class="subtitle">From Vibe Coding to Agentic Engineering</p>
+          <div class="title-meta title-meta-clean" aria-label="Presentation metadata">
+            <div>
+              <span>Speaker</span>
+              <strong>Uriel Dolev</strong>
+            </div>
+            <div>
+              <span>Slides Engineer</span>
+              <strong class="brand-lockup">
+                <img class="openai-mark" src="./assets/openai-logo-symbol.svg" alt="" aria-hidden="true">
+                Codex
+              </strong>
+            </div>
+            <div>
+              <span>Date</span>
+              <strong>May 19, 2026</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide content-slide overview-slide" data-title="Paper Overview">
+      <div class="slide-frame overview-frame">
+        <header class="slide-header overview-header">
+          <p class="eyebrow">Paper Overview</p>
+          <h2>How we will read the paper</h2>
+          <p class="overview-note">We mostly follow the report order, but spend more attention on data, RL, and
+            evaluation signals.</p>
+        </header>
+
+        <div class="overview-grid">
+          <section class="overview-path" aria-label="Presentation path">
+            <h3>Presentation path</h3>
+            <ol class="path-list">
+              <li>
+                <span>1</span>
+                <div>
+                  <strong>Goal + main results</strong>
+                  <p>What GLM-5 is optimizing for.</p>
+                </div>
+              </li>
+              <li>
+                <span>2</span>
+                <div>
+                  <strong>Architecture</strong>
+                  <p>MoE scale, MLA/MTP, DSA and long context.</p>
+                </div>
+              </li>
+              <li>
+                <span>3</span>
+                <div>
+                  <strong>Pre + mid training</strong>
+                  <p>Short pass on data and context extension.</p>
+                </div>
+              </li>
+              <li>
+                <span>4</span>
+                <div>
+                  <strong>Post-training</strong>
+                  <p>SFT briefly, then RL and agent environments in detail.</p>
+                </div>
+              </li>
+              <li>
+                <span>5</span>
+                <div>
+                  <strong>Evaluations</strong>
+                  <p>What signals they trust: ARC, real-world SWE, long-horizon tasks.</p>
+                </div>
+              </li>
+              <li>
+                <span>6</span>
+                <div>
+                  <strong>Easter eggs</strong>
+                  <p>Short ending section from the paper.</p>
+                </div>
+              </li>
+            </ol>
+
+            <div class="infra-callout">
+              <strong>Infrastructure appears throughout</strong>
+              <p>We will note training/serving/chip-adaptation infrastructure, but not make it a main track.</p>
+            </div>
+          </section>
+
+          <section class="overview-space" aria-label="Estimated paper-space share">
+            <h3>Approx. paper space</h3>
+            <p class="space-note">Main-body TeX word-count estimate; appendix excluded.</p>
+            <div class="space-bars">
+              <div class="space-row">
+                <span class="space-label">RL</span>
+                <span class="space-bar"><i class="share-rl" style="width: 35%"></i></span>
+                <strong>35%</strong>
+              </div>
+              <div class="space-row">
+                <span class="space-label">Evaluations</span>
+                <span class="space-bar"><i class="share-eval" style="width: 25%"></i></span>
+                <strong>25%</strong>
+              </div>
+              <div class="space-row">
+                <span class="space-label">Architecture</span>
+                <span class="space-bar"><i class="share-arch" style="width: 13%"></i></span>
+                <strong>13%</strong>
+              </div>
+              <div class="space-row muted-row">
+                <span class="space-label">Infrastructure</span>
+                <span class="space-bar"><i class="share-infra" style="width: 11%"></i></span>
+                <strong>11%</strong>
+              </div>
+              <div class="space-row">
+                <span class="space-label">Goal + results</span>
+                <span class="space-bar"><i class="share-goal" style="width: 7%"></i></span>
+                <strong>7%</strong>
+              </div>
+              <div class="space-row">
+                <span class="space-label">Pre + mid training</span>
+                <span class="space-bar"><i class="share-data" style="width: 4%"></i></span>
+                <strong>4%</strong>
+              </div>
+              <div class="space-row">
+                <span class="space-label">SFT</span>
+                <span class="space-bar"><i class="share-sft" style="width: 3%"></i></span>
+                <strong>3%</strong>
+              </div>
+              <div class="space-row">
+                <span class="space-label">Conclusion + easter eggs</span>
+                <span class="space-bar"><i class="share-other" style="width: 2%"></i></span>
+                <strong>2%</strong>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide content-slide" data-title="Context">
+      <div class="slide-frame">
+        <header class="slide-header">
+          <p class="eyebrow">Model Context / Agenda</p>
+          <h2 class="single-line-title">Goal: Best Coding / SWE / Agentic Model</h2>
+        </header>
+
+        <div class="arc-flow" aria-label="GLM-4.5 to GLM-5 framing">
+          <article class="stage-card">
+            <h3><span class="model-name glm45">GLM-4.5</span> <span class="model-role">(Foundation)</span></h3>
+            <p class="stage-theme">ARC capabilities</p>
+            <p>Build a strong agentic, reasoning, and coding base model.</p>
+          </article>
+
+          <div class="flow-arrow" aria-hidden="true"></div>
+
+          <article class="stage-card stage-card-emphasis">
+            <h3><span class="model-name glm5">GLM-5</span> <span class="model-role">(Target)</span></h3>
+            <p class="stage-theme"><span class="accent-underline">Real-world</span> SWE</p>
+            <p>Move from coding assistance toward long-horizon, end-to-end software engineering tasks.</p>
+          </article>
+        </div>
+
+        <div class="focus-band" aria-label="Talk focus">
+          <div>
+            <span>Mechanism 1</span>
+            <strong>Long-context fidelity</strong>
+          </div>
+          <div>
+            <span>Mechanism 2</span>
+            <strong>RL scaling</strong>
+          </div>
+          <div>
+            <span>Mechanism 3</span>
+            <strong>Infrastructure</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide content-slide repo-slide" data-title="Release Repo">
+      <div class="slide-frame repo-frame">
+        <header class="slide-header compact-header">
+          <p class="eyebrow">Abstract, last line</p>
+        </header>
+
+        <blockquote class="repo-quote">
+          "Code, models, and more information are available at
+          <a href="https://github.com/zai-org/GLM-5" target="_blank" rel="noreferrer">github.com/zai-org/GLM-5</a>."
+        </blockquote>
+
+        <div class="repo-question">
+          <h2>What do you think we will find in the repo?</h2>
+        </div>
+
+        <a class="repo-link" href="https://github.com/zai-org/GLM-5" target="_blank" rel="noreferrer">
+          Open release repository
+        </a>
+      </div>
+    </section>
+
+    <section class="slide content-slide results-slide" data-title="Main Results">
+      <div class="slide-frame summary-frame">
+        <header class="slide-header">
+          <p class="eyebrow">Main Results</p>
+          <h2>Very Strong Model</h2>
+        </header>
+
+        <ul class="claim-list">
+          <li>
+            <strong>Open-weight leader.</strong>
+            AA Index v4.0 score 50, plus No. 1 open model on LMArena Text and Code.
+          </li>
+          <li>
+            <strong>Clear jump over GLM-4.7.</strong>
+            About +20% average improvement on ARC and +8 points on AA Index.
+          </li>
+          <li>
+            <strong>Frontier competitive, not dominant.</strong>
+            Comparable to Claude Opus 4.5 and GPT-5.2 (xhigh), better than Gemini 3 Pro in their ARC summary.
+          </li>
+          <li>
+            <strong>Real-world / long-horizon focus.</strong>
+            Vending-Bench 2 ranks No. 1 among open models; CC-Bench-V2 narrows the Claude gap across frontend, backend,
+            and long-horizon tasks.
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="slide content-slide gallery-slide" data-title="Results Gallery">
+      <div class="slide-frame gallery-frame">
+        <header class="slide-header gallery-header">
+          <p class="eyebrow">Main Results / Evidence</p>
+          <h2>Figures behind the results</h2>
+        </header>
+
+        <div class="result-gallery" aria-label="Paper result figures">
+          <button class="gallery-card" type="button" data-modal-title="Figure 1: ARC benchmark summary"
+            data-modal-caption="Results of GLM-5, DeepSeek-V3.2, Claude Opus 4.5, Gemini 3 Pro, and GPT-5.2 (xhigh) on 8 agentic, reasoning, and coding benchmarks: Humanity's Last Exam, SWE-bench Verified, SWE-bench Multilingual, Terminal-Bench 2.0, BrowseComp, MCP-Atlas, tau^2-Bench, Vending Bench 2.">
+            <span class="gallery-label">Figure 1</span>
+            <span class="figure-preview single-preview">
+              <img src="./assets/results/arc_clean.png"
+                alt="Results on 8 agentic, reasoning, and coding benchmarks from the GLM-5 paper">
+            </span>
+          </button>
+
+          <button class="gallery-card" type="button" data-modal-title="Figure 2: Artificial Analysis Intelligence Index"
+            data-modal-caption="Artificial Analysis Intelligence Index v4.0 incorporates 10 evaluations: GDPval-AA, tau^2-Bench Telecom, Terminal-Bench Hard, SciCode, AA-LCR, AA-Omniscience, IFBench, Humanity's Last Exam, GPQA Diamond, CritPt.">
+            <span class="gallery-label">Figure 2</span>
+            <span class="figure-preview single-preview wide-preview">
+              <img src="../GLM-5-arXiv/figures/aa.PNG"
+                alt="Artificial Analysis Intelligence Index result from the GLM-5 paper">
+            </span>
+          </button>
+
+          <button class="gallery-card" type="button" data-modal-title="Figure 3: LMArena Text and Code"
+            data-modal-caption="On LMArena, GLM-5 is the No. 1 open model in both Text Arena and Code Arena.">
+            <span class="gallery-label">Figure 3</span>
+            <span class="figure-preview paired-preview">
+              <img src="../GLM-5-arXiv/figures/text-arena.jpeg" alt="LMArena Text Arena result from the GLM-5 paper">
+              <img src="../GLM-5-arXiv/figures/code-arena.jpeg" alt="LMArena Code Arena result from the GLM-5 paper">
+            </span>
+          </button>
+
+          <button class="gallery-card" type="button" data-modal-title="Figure 4: Long-horizon tasks"
+            data-modal-caption="Results on several long-horizon tasks. Left: Vending-Bench 2; Right: CC-Bench-V2.">
+            <span class="gallery-label">Figure 4</span>
+            <span class="figure-preview paired-preview">
+              <img src="../GLM-5-arXiv/figures/vending-bench.jpeg" alt="Vending-Bench 2 result from the GLM-5 paper">
+              <img src="./assets/results/cc-bench-v2.png" alt="CC-Bench-V2 result from the GLM-5 paper">
+            </span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide content-slide contributions-slide" data-title="Technical Contributions">
+      <div class="slide-frame contributions-frame">
+        <header class="slide-header contributions-header">
+          <p class="eyebrow">Methods</p>
+          <h2>4 main contributions driving GLM-5's leap</h2>
+        </header>
+
+        <div class="contribution-sequence" aria-label="Main technical contributions from the introduction">
+          <article class="contribution-item">
+            <span class="contribution-index">1</span>
+            <div>
+              <h3>DSA adoption</h3>
+              <p>Enables efficient long context by reducing training and inference costs while preserving long-context
+                understanding and reasoning depth.</p>
+            </div>
+          </article>
+
+          <article class="contribution-item partial-contribution">
+            <span class="contribution-index">2</span>
+            <div>
+              <h3>Asynchronous RL infrastructure</h3>
+              <p>Decouples generation from training, improving GPU utilization and enabling massive-scale exploration of
+                agent trajectories.</p>
+            </div>
+          </article>
+
+          <article class="contribution-item">
+            <span class="contribution-index">3</span>
+            <div>
+              <h3>Diverse Agent RL environments</h3>
+              <p>Improve autonomous decision-making by learning from diverse long-horizon interactions, especially
+                planning and self-correction.</p>
+            </div>
+          </article>
+
+          <article class="contribution-item muted-contribution">
+            <span class="contribution-index">4</span>
+            <div>
+              <h3>Full-stack chip adaptation</h3>
+              <p>Optimizes kernels through upper-level inference frameworks across seven Chinese GPU ecosystems.</p>
+            </div>
+          </article>
+        </div>
+
+        <blockquote class="contribution-summary">
+          Together, these contributions enable more efficient long-context modeling and scalable RL for long-horizon,
+          real-world agent tasks.
+        </blockquote>
+      </div>
+    </section>
+
+    <section class="slide section-divider-slide" data-title="Architecture Section">
+      <div class="section-divider-frame">
+        <p class="section-kicker">Section 1</p>
+        <h2>Architecture</h2>
+        <p>MoE scale, MLA, DSA, and MTP.</p>
+      </div>
+    </section>
+
+    <section class="slide content-slide architecture-slide" data-title="Attention Problem">
+      <div class="slide-frame architecture-frame">
+        <header class="slide-header architecture-header">
+          <p class="eyebrow">Architecture / Attention</p>
+          <h2>Long-running agents need long context</h2>
+        </header>
+
+        <div class="long-context-layout">
+          <section class="architecture-problem">
+            <span>Problem</span>
+            <h3>Dense full attention is the bottleneck at 128K.</h3>
+            <p>For real-world SWE agents, context grows across long-horizon workflows. GLM-5’s architecture targets this
+              evolving context while keeping training and inference practical.</p>
+          </section>
+
+          <section class="attention-solution" aria-label="Sparse attention recipe">
+            <span>Solution: Efficient long-context attention</span>
+            <div class="solution-step">
+              <strong>1</strong>
+              <p>For the current token, choose a smaller set of relevant previous tokens.</p>
+            </div>
+            <div class="solution-step">
+              <strong>2</strong>
+              <p>Perform attention over the selected tokens instead of the full context.</p>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide content-slide architecture-slide" data-title="Attention Questions">
+      <div class="slide-frame architecture-frame">
+        <header class="slide-header architecture-header">
+          <p class="eyebrow">Architecture / Attention</p>
+          <h2>That creates two design questions</h2>
+        </header>
+
+        <div class="attention-question-grid" aria-label="Long-context attention design questions">
+          <article>
+            <span>Question 1</span>
+            <strong>Which tokens participate?</strong>
+            <p>The token-selection mechanism determines what context the current token can use.</p>
+          </article>
+          <article>
+            <span>Question 2</span>
+            <strong>What attention variant runs on the selected tokens?</strong>
+            <p>This choice affects model performance, decoding cost, and KV-cache footprint.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide content-slide architecture-slide table-slide" data-title="MLA">
+      <div class="slide-frame architecture-frame">
+        <header class="slide-header architecture-header">
+          <p class="eyebrow">Architecture / Attention</p>
+          <h2>MLA: reduced key-value vectors</h2>
+        </header>
+
+        <div class="mla-layout">
+          <section class="mla-summary">
+            <article>
+              <span>Cache math</span>
+              <p><strong>GQA-8:</strong> 8 KV heads x (128 K + 128 V) = 2048 cached dims.</p>
+              <p><strong>MLA:</strong> 512 latent KV + 64 RoPE key = 576 cached dims.</p>
+            </article>
+            <article>
+              <span>Decode tradeoff</span>
+              <p>MLA stores much less cache, but each head scores against a 576-dim cached vector. GLM-5 reduces head
+                count
+                to lower decode cost.</p>
+            </article>
+            <article>
+              <span>Training fix</span>
+              <p>Muon Split orthogonalizes up-projections per head, relaxing cross-head coupling and closing most of the
+                GQA quality gap.</p>
+            </article>
+          </section>
+
+          <section class="paper-table-wrap" aria-label="Evaluation results for GQA-8 and MLA variants">
+            <table class="paper-table compact-paper-table">
+              <caption>Evaluation results for GQA-8 and variants of MLA.</caption>
+              <thead>
+                <tr>
+                  <th>Dataset</th>
+                  <th><span class="term" tabindex="0"
+                      data-note="Commonsense sentence-completion benchmark with adversarially filtered endings.">Hellaswag</span>
+                  </th>
+                  <th><span class="term" tabindex="0"
+                      data-note="Massive Multitask Language Understanding: multiple-choice knowledge and reasoning exams across many subjects.">MMLU</span>
+                  </th>
+                  <th><span class="term" tabindex="0"
+                      data-note="Chinese evaluation suite covering knowledge and reasoning across academic subjects.">C-Eval</span>
+                  </th>
+                  <th><span class="term" tabindex="0"
+                      data-note="Reading-comprehension benchmark built from English exam passages and questions.">RACE</span>
+                  </th>
+                  <th><span class="term" tabindex="0"
+                      data-note="BIG-Bench Hard: difficult tasks selected from BIG-Bench that stress reasoning.">BBH</span>
+                  </th>
+                  <th><span class="term" tabindex="0"
+                      data-note="Grade-school math word problems; usually evaluated by exact-match final answer.">GSM8K</span>
+                  </th>
+                  <th><span class="term" tabindex="0"
+                      data-note="Code-generation benchmark of Python programming problems with unit tests.">HumanEval</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th>GQA-8</th>
+                  <td>77.3</td>
+                  <td>61.2</td>
+                  <td>60.0</td>
+                  <td>79.6</td>
+                  <td><strong>53.3</strong></td>
+                  <td><strong>47.6</strong></td>
+                  <td><strong>38.5</strong></td>
+                </tr>
+                <tr>
+                  <th>MLA</th>
+                  <td>77.3</td>
+                  <td>61.5</td>
+                  <td>59.7</td>
+                  <td>77.8</td>
+                  <td>48.9</td>
+                  <td>46.2</td>
+                  <td>33.5</td>
+                </tr>
+                <tr>
+                  <th>MLA + Muon Split</th>
+                  <td><strong>77.8</strong></td>
+                  <td><strong>62.5</strong></td>
+                  <td><strong>62.1</strong></td>
+                  <td><strong>79.9</strong></td>
+                  <td>51.8</td>
+                  <td>45.0</td>
+                  <td>36.7</td>
+                </tr>
+                <tr>
+                  <th>MLA-256 + Muon Split</th>
+                  <td>77.4</td>
+                  <td>62.0</td>
+                  <td>59.9</td>
+                  <td>79.6</td>
+                  <td>51.3</td>
+                  <td>47.5</td>
+                  <td>36.6</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide content-slide eval-compare-slide" data-title="Base vs Final Evals">
+      <div class="slide-frame eval-compare-frame">
+        <header class="slide-header eval-compare-header">
+          <p class="eyebrow">Evaluation / Before and After Post-training</p>
+          <h2>Base model benchmarks vs final ARC evaluations</h2>
+        </header>
+
+        <div class="eval-table-pair">
+          <section class="eval-mini-table-card">
+            <h3>Appendix: Base models</h3>
+            <table class="paper-table eval-mini-table">
+              <thead>
+                <tr>
+                  <th>Benchmark</th>
+                  <th>DeepSeek-V3<br>Base</th>
+                  <th>Kimi-K2<br>Base</th>
+                  <th>GLM-4.5<br>Base</th>
+                  <th>GLM-5<br>Base</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="eval-section-row">
+                  <th colspan="5">English</th>
+                </tr>
+                <tr>
+                  <th>SimpleQA</th>
+                  <td>26.6</td>
+                  <td>35.3</td>
+                  <td>30.0</td>
+                  <td><strong>36.0</strong></td>
+                </tr>
+                <tr>
+                  <th>BBH</th>
+                  <td>88.4</td>
+                  <td><strong>88.7</strong></td>
+                  <td>86.2</td>
+                  <td>87.4</td>
+                </tr>
+                <tr>
+                  <th>MMLU</th>
+                  <td>87.2</td>
+                  <td>87.8</td>
+                  <td>86.1</td>
+                  <td><strong>88.3</strong></td>
+                </tr>
+                <tr>
+                  <th>HellaSwag</th>
+                  <td>88.9</td>
+                  <td><strong>94.6</strong></td>
+                  <td>87.1</td>
+                  <td>88.1</td>
+                </tr>
+                <tr class="eval-section-row">
+                  <th colspan="5">Code</th>
+                </tr>
+                <tr>
+                  <th>EvalPlus</th>
+                  <td>65.6</td>
+                  <td>80.3</td>
+                  <td>78.1</td>
+                  <td><strong>87.0</strong></td>
+                </tr>
+                <tr>
+                  <th>LiveCodeBench</th>
+                  <td>24.6</td>
+                  <td>26.3</td>
+                  <td>28.1</td>
+                  <td><strong>34.4</strong></td>
+                </tr>
+                <tr class="eval-section-row">
+                  <th colspan="5">Math</th>
+                </tr>
+                <tr>
+                  <th>GSM8K</th>
+                  <td>87.6</td>
+                  <td><strong>92.1</strong></td>
+                  <td>79.4</td>
+                  <td>68.8</td>
+                </tr>
+                <tr>
+                  <th>MATH</th>
+                  <td>62.6</td>
+                  <td><strong>70.2</strong></td>
+                  <td>61.0</td>
+                  <td>56.4</td>
+                </tr>
+                <tr class="eval-section-row">
+                  <th colspan="5">Chinese</th>
+                </tr>
+                <tr>
+                  <th>C-Eval</th>
+                  <td>90.1</td>
+                  <td><strong>92.5</strong></td>
+                  <td>86.9</td>
+                  <td>88.8</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="eval-mini-table-card">
+            <h3>Table 7: Final trained models</h3>
+            <table class="paper-table eval-mini-table final-eval-table">
+              <thead>
+                <tr>
+                  <th>Benchmark</th>
+                  <th>GLM-5</th>
+                  <th>GLM-4.7</th>
+                  <th>DeepSeek<br>V3.2</th>
+                  <th>Best listed</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="eval-section-row">
+                  <th colspan="5">Reasoning &amp; General</th>
+                </tr>
+                <tr>
+                  <th>HLE</th>
+                  <td>30.5</td>
+                  <td>24.8</td>
+                  <td>25.1</td>
+                  <td>37.2</td>
+                </tr>
+                <tr>
+                  <th>HLE w/ Tools</th>
+                  <td><strong>50.4</strong></td>
+                  <td>42.8</td>
+                  <td>40.8</td>
+                  <td>51.8</td>
+                </tr>
+                <tr>
+                  <th>GPQA-Diamond</th>
+                  <td>86.0</td>
+                  <td>85.7</td>
+                  <td>82.4</td>
+                  <td>92.4</td>
+                </tr>
+                <tr>
+                  <th>LongBench v2</th>
+                  <td><strong>64.5</strong></td>
+                  <td>59.1</td>
+                  <td>59.8</td>
+                  <td>68.2</td>
+                </tr>
+                <tr class="eval-section-row">
+                  <th colspan="5">Coding</th>
+                </tr>
+                <tr>
+                  <th>SWE-bench Ver.</th>
+                  <td>77.8</td>
+                  <td>73.8</td>
+                  <td>73.1</td>
+                  <td>80.9</td>
+                </tr>
+                <tr>
+                  <th>Terminal-Bench 2</th>
+                  <td><strong>56.2 / 60.7†</strong></td>
+                  <td>41.0</td>
+                  <td>39.3</td>
+                  <td>59.3</td>
+                </tr>
+                <tr class="eval-section-row">
+                  <th colspan="5">Agentic</th>
+                </tr>
+                <tr>
+                  <th>BrowseComp</th>
+                  <td><strong>62.0</strong></td>
+                  <td>52.0</td>
+                  <td>51.4</td>
+                  <td>62.0</td>
+                </tr>
+                <tr>
+                  <th>MCP-Atlas</th>
+                  <td><strong>67.8</strong></td>
+                  <td>52.0</td>
+                  <td>62.2</td>
+                  <td>68.0</td>
+                </tr>
+                <tr>
+                  <th>GDPval-AA Elo</th>
+                  <td><strong>1,409</strong></td>
+                  <td>1,198</td>
+                  <td>1,195</td>
+                  <td>1,462</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+        </div>
+
+        <p class="eval-compare-note">Left: base-model appendix table subset. Right: Table 7 subset; † marks verified
+          Terminal-Bench 2.0. “Best listed” is the highest value among models reported in the paper table.</p>
+      </div>
+    </section>
+
+
+
+    <section class="slide content-slide architecture-slide" data-title="DSA Continued Pre-Training">
+      <div class="slide-frame architecture-frame">
+        <header class="slide-header architecture-header">
+          <p class="eyebrow">Architecture / Attention</p>
+          <h2>Continued pre-training with DSA</h2>
+        </header>
+
+        <div class="dsa-layout">
+          <section class="dsa-definition">
+            <span>DeepSeek Sparse Attention</span>
+            <p>DSA replaces dense <strong>O(L<sup>2</sup>)</strong> attention with dynamic, fine-grained selection.
+              Instead of a
+              fixed pattern like sliding windows, it uses content to decide which tokens are important.</p>
+            <strong>Reported attention-compute reduction: roughly 1.5-2x for long sequences.</strong>
+          </section>
+
+          <section class="training-timeline" aria-label="DSA continued pre-training recipe">
+            <div>
+              <span>Start</span>
+              <strong>Base model after mid-training</strong>
+            </div>
+            <div>
+              <span>Warm-up</span>
+              <strong>1000 steps</strong>
+              <p>14 sequences per step, 202,752 tokens each, max LR 5e-3.</p>
+            </div>
+            <div>
+              <span>Sparse adaptation</span>
+              <strong>20B tokens</strong>
+              <p>Uses the mid-training data mixture and hyperparameters; no separate DSA data breakdown is given.</p>
+            </div>
+          </section>
+        </div>
+
+        <p class="architecture-footline">DeepSeek-V3.2-Exp maintains the same benchmark performance as its dense
+          predecessor; this is presented as evidence that about 90% of long-context attention entries are redundant.
+          GLM-5 DSA reference contrast: 20B tokens vs. DeepSeek-V3.2's 943.7B.</p>
+      </div>
+    </section>
+
+    <section class="slide content-slide architecture-slide table-slide" data-title="DSA Evidence">
+      <div class="slide-frame architecture-frame">
+        <header class="slide-header architecture-header">
+          <p class="eyebrow">Architecture / Attention</p>
+          <h2>20B DSA adaptation tokens are enough to match MLA closely</h2>
+        </header>
+
+        <div class="dsa-evidence-layout">
+          <section class="paper-table-wrap" aria-label="MLA and DSA long-context benchmark comparison">
+            <table class="paper-table compact-paper-table">
+              <caption>Comparison of long-context benchmarks between MLA and DSA base models.</caption>
+              <thead>
+                <tr>
+                  <th></th>
+                  <th><span class="term" tabindex="0"
+                      data-note="NIAH long-context retrieval benchmark at 128k context length; the paper does not expand MQ in this section.">MQ-NIAH-128k</span>
+                  </th>
+                  <th><span class="term" tabindex="0"
+                      data-note="NIAH long-context retrieval benchmark at 128k context length; the paper does not expand MV in this section.">MV-NIAH-128k</span>
+                  </th>
+                  <th><span class="term" tabindex="0"
+                      data-note="Stanford Question Answering Dataset; reading-comprehension questions over Wikipedia passages, evaluated here at 128k context length.">SQuAD-128k</span>
+                  </th>
+                  <th><span class="term" tabindex="0"
+                      data-note="Multi-hop question-answering benchmark over Wikipedia passages, evaluated here at 128k context length.">HotpotQA-128k</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th>MLA</th>
+                  <td><strong>100.0</strong></td>
+                  <td>95.5</td>
+                  <td>79.7</td>
+                  <td><strong>66.3</strong></td>
+                </tr>
+                <tr>
+                  <th>DSA</th>
+                  <td><strong>100.0</strong></td>
+                  <td><strong>97.0</strong></td>
+                  <td><strong>86.0</strong></td>
+                  <td>63.0</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <button class="paper-figure-card gallery-card" type="button" data-modal-title="SFT loss curves: MLA vs DSA"
+            data-modal-caption="SFT loss curves comparison between MLA and DSA training. Results are smoothed by Running Average with a window size of 50.">
+            <span class="gallery-label">Paper figure</span>
+            <span class="figure-preview single-preview">
+              <img src="./assets/architecture/loss_v2.png" alt="SFT loss curves comparing MLA and DSA training">
+            </span>
+          </button>
+        </div>
+
+        <p class="architecture-footline">After 20B adaptation tokens: close long-context performance, then tied SFT
+          loss/evaluation after the same SFT data.</p>
+      </div>
+    </section>
+
+    <section class="slide content-slide architecture-slide" data-title="Efficient Attention Variants">
+      <div class="slide-frame architecture-frame">
+        <header class="slide-header architecture-header">
+          <p class="eyebrow">Architecture / Attention</p>
+          <h2>Ablation study of efficient attention variants</h2>
+        </header>
+
+        <div class="variant-grid">
+          <article>
+            <span>Sliding Window Attention Interleave</span>
+            <p>A fixed alternating pattern of full-attention and windowed-attention layers applied uniformly across the
+              network.</p>
+          </article>
+          <article>
+            <span>Gated DeltaNet</span>
+            <p>A linear attention variant that replaces the quadratic softmax attention computation with a gated linear
+              recurrence, reducing the computational cost of attention from quadratic to linear in sequence length.</p>
+          </article>
+          <article>
+            <span>SWA Pattern</span>
+            <p>Search-based layer selection: retain full attention where it matters, convert selected layers to SWA, and
+              discover the pattern at 16K with beam search.</p>
+          </article>
+          <article>
+            <span>SimpleGDN</span>
+            <p>Removes Conv1d and explicit gating modules, then maps pretrained Q/K/V projection weights into the linear
+              recurrence formulation.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide content-slide architecture-slide table-slide" data-title="SWA Pattern Search">
+      <div class="slide-frame architecture-frame">
+        <header class="slide-header architecture-header">
+          <p class="eyebrow">Architecture / Attention</p>
+          <h2>Search-based SWA outperforms fixed interleaving</h2>
+        </header>
+
+        <section class="paper-table-wrap" aria-label="RULER benchmark results for SWA variants without training">
+          <table class="paper-table">
+            <caption><span class="term" tabindex="0"
+                data-note="Synthetic long-context benchmark for measuring effective context size, with configurable sequence lengths and task complexity across retrieval, multi-hop tracing, aggregation, and QA-style tasks.">RULER</span>
+              benchmark results for GLM-9B baseline and two SWA variants without additional training.</caption>
+            <thead>
+              <tr>
+                <th></th>
+                <th>4K</th>
+                <th>8K</th>
+                <th>16K</th>
+                <th>32K</th>
+                <th>64K</th>
+                <th>128K</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>GLM-9B Full Attn</th>
+                <td>95.19</td>
+                <td><strong>93.67</strong></td>
+                <td><strong>92.01</strong></td>
+                <td><strong>91.09</strong></td>
+                <td><strong>85.35</strong></td>
+                <td><strong>75.28</strong></td>
+              </tr>
+              <tr>
+                <th>SWA Interleave</th>
+                <td>94.87</td>
+                <td>54.02</td>
+                <td>25.89</td>
+                <td>12.61</td>
+                <td>8.32</td>
+                <td>6.51</td>
+              </tr>
+              <tr>
+                <th>SWA Pattern</th>
+                <td><strong>95.78</strong></td>
+                <td>92.54</td>
+                <td>88.92</td>
+                <td>82.52</td>
+                <td>70.23</td>
+                <td>53.95</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <p class="architecture-footline">Both SWA methods use a 1:1 full-attention/SWA layer ratio with a 4096-token
+          window. The search uses beam size 8, optimizes two layers per step at 16K, and applies the resulting pattern
+          to all tested context lengths.</p>
+      </div>
+    </section>
+
+    <section class="slide content-slide architecture-slide table-slide" data-title="Efficient Attention Results">
+      <div class="slide-frame architecture-frame">
+        <header class="slide-header architecture-header">
+          <p class="eyebrow">Architecture / Attention</p>
+          <h2>After continual training, gaps remain on retrieval</h2>
+        </header>
+
+        <section class="paper-table-wrap" aria-label="Long-context benchmark results for efficient attention variants">
+          <table class="paper-table dense-result-table">
+            <caption>Long-context benchmark results after 190B-token continual training at 64K context from the GLM-9B
+              full-attention baseline.</caption>
+            <thead>
+              <tr>
+                <th></th>
+                <th><span class="term" tabindex="0"
+                    data-note="Synthetic long-context benchmark for measuring effective context size, with configurable sequence lengths and task complexity across retrieval, multi-hop tracing, aggregation, and QA-style tasks.">RULER
+                    64K / 128K</span></th>
+                <th><span class="term" tabindex="0"
+                    data-note="OpenAI Multi-Round Co-reference Resolution: a multiple-needle long-context test where the model must distinguish similar repeated requests inside a long multi-turn conversation.">MRCR
+                    64K / 128K</span></th>
+                <th><span class="term" tabindex="0"
+                    data-note="In-context-learning category of HELMET, an application-centric long-context benchmark with controllable lengths up to 128K and seven task categories.">HELMET-ICL
+                    64K / 128K</span></th>
+                <th><span class="term" tabindex="0"
+                    data-note="Long-context code-understanding benchmark: given repository code context and a natural-language function description, the model must identify the matching function.">RepoQA
+                    64K / 128K</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>GLM-9B</th>
+                <td>85.35 / 75.28</td>
+                <td>36.53 / 35.39</td>
+                <td>77.68 / 77.36</td>
+                <td>69.00 / 65.83</td>
+              </tr>
+              <tr>
+                <th>SWA Interleave</th>
+                <td>65.94 / 44.93 <small>&darr;19.41 / &darr;30.35</small></td>
+                <td>30.03 / 28.83 <small>&darr;6.50 / &darr;6.56</small></td>
+                <td>75.96 / 63.52 <small>&darr;1.72 / &darr;13.84</small></td>
+                <td>50.33 / 39.33 <small>&darr;18.67 / &darr;26.50</small></td>
+              </tr>
+              <tr>
+                <th>SWA Pattern</th>
+                <td><strong>83.72 / 69.59</strong> <small>&darr;1.63 / &darr;5.69</small></td>
+                <td><strong>35.02 / 33.58</strong> <small>&darr;1.51 / &darr;1.81</small></td>
+                <td>76.48 / 74.60 <small>&darr;1.20 / &darr;2.76</small></td>
+                <td>62.33 / 51.17 <small>&darr;6.67 / &darr;14.66</small></td>
+              </tr>
+              <tr>
+                <th>GDN</th>
+                <td>76.76 / 64.00 <small>&darr;8.59 / &darr;11.28</small></td>
+                <td>31.72 / 30.22 <small>&darr;4.81 / &darr;5.17</small></td>
+                <td>76.88 / 74.84 <small>&darr;0.80 / &darr;2.52</small></td>
+                <td>65.50 / 56.17 <small>&darr;3.50 / &darr;9.66</small></td>
+              </tr>
+              <tr>
+                <th>SimpleGDN</th>
+                <td>81.76 / 67.03 <small>&darr;3.59 / &darr;8.25</small></td>
+                <td>33.03 / 31.27 <small>&darr;3.50 / &darr;4.12</small></td>
+                <td><strong>79.80 / 81.84</strong> <small>&uarr;2.12 / &uarr;4.48</small></td>
+                <td><strong>65.50 / 58.50</strong> <small>&darr;3.50 / &darr;7.33</small></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <p class="architecture-footline">Each method keeps a 1:1 ratio between efficient-attention layers and full
+          attention layers. In contrast, DSA is lossless by construction: its lightning indexer achieves token-level
+          sparsity without discarding long-range dependencies.</p>
+      </div>
+    </section>
+
+    <section class="slide content-slide architecture-slide table-slide" data-title="DSA Final Check">
+      <div class="slide-frame architecture-frame">
+        <header class="slide-header architecture-header">
+          <p class="eyebrow">Architecture / Attention</p>
+          <h2>DSA warmup already preserves most performance</h2>
+        </header>
+
+        <section class="paper-table-wrap" aria-label="RULER benchmark results for GLM-4.7-Flash with DSA">
+          <table class="paper-table">
+            <caption><span class="term" tabindex="0"
+                data-note="Synthetic long-context benchmark for measuring effective context size, with configurable sequence lengths and task complexity across retrieval, multi-hop tracing, aggregation, and QA-style tasks.">RULER</span>
+              benchmark results for GLM-4.7-Flash with DSA.</caption>
+            <thead>
+              <tr>
+                <th></th>
+                <th>4K</th>
+                <th>8K</th>
+                <th>16K</th>
+                <th>32K</th>
+                <th>64K</th>
+                <th>128K</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>GLM-4.7-Flash</th>
+                <td>97.44</td>
+                <td>96.72</td>
+                <td>95.83</td>
+                <td>92.96</td>
+                <td>85.34</td>
+                <td>79.21</td>
+              </tr>
+              <tr>
+                <th>+ DSA warmup</th>
+                <td>97.51</td>
+                <td>96.54</td>
+                <td>95.40</td>
+                <td>90.09</td>
+                <td>84.05</td>
+                <td>71.35</td>
+              </tr>
+              <tr>
+                <th>+ DSA</th>
+                <td>96.77</td>
+                <td>96.25</td>
+                <td>96.69</td>
+                <td>93.45</td>
+                <td>87.06</td>
+                <td>78.86</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <p class="architecture-footline">Warmup trains only the indexer with base weights frozen; the full DSA variant
+          jointly trains model and indexer for 150B tokens.</p>
+      </div>
+    </section>
+
+    <section class="slide content-slide architecture-slide" data-title="MTP">
+      <div class="slide-frame architecture-frame">
+        <header class="slide-header architecture-header">
+          <p class="eyebrow">Architecture / MTP</p>
+          <h2>Multi Token Prediction</h2>
+        </header>
+
+        <div class="mtp-layout">
+          <section class="mtp-explanation">
+            <article>
+              <span>Role</span>
+              <p>MTP improves base model performance and acts as a draft model for speculative decoding.</p>
+            </article>
+            <article>
+              <span>Problem</span>
+              <p>Predicting the next <strong>n</strong> tokens normally requires <strong>n</strong> MTP layers, so MTP
+                parameters and KV cache scale with speculative steps.</p>
+            </article>
+            <article>
+              <span>DeepSeek-V3</span>
+              <p>A single MTP layer predicts the next 2 tokens during inference, creating a training-inference
+                discrepancy that reduces second-token acceptance.</p>
+            </article>
+            <article>
+              <span>GLM-5</span>
+              <p>GLM-5 shares parameters across 3 MTP layers during training, keeping draft-model memory cost consistent
+                with the single-layer setup.</p>
+            </article>
+          </section>
+
+          <section class="accept-table" aria-label="MTP accept length comparison">
+            <h3>Accept length</h3>
+            <div>
+              <span>DeepSeek-V3.2</span>
+              <strong class="paper-normal">2.55</strong>
+            </div>
+            <div>
+              <span>GLM-5</span>
+              <strong>2.76</strong>
+            </div>
+            <p>Same number of speculative steps: 4, measured on the paper’s private prompt set.</p>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide content-slide architecture-slide" data-title="Architecture Scale">
+      <div class="slide-frame architecture-frame">
+        <header class="slide-header architecture-header">
+          <p class="eyebrow">Architecture Summary</p>
+          <h2>Bigger model, modest active-size increase</h2>
+        </header>
+
+        <div class="scale-layout">
+          <section class="scale-table" aria-label="GLM-4.5 and GLM-5 architecture comparison">
+            <div class="scale-row scale-head">
+              <span></span>
+              <strong>GLM-4.5</strong>
+              <strong>GLM-5</strong>
+            </div>
+            <div class="scale-row">
+              <span>Total parameters</span>
+              <strong>355B</strong>
+              <strong>744B</strong>
+            </div>
+            <div class="scale-row">
+              <span>Activated parameters</span>
+              <strong>32B</strong>
+              <strong>40B</strong>
+            </div>
+            <div class="scale-row">
+              <span>Dense layers</span>
+              <strong>3</strong>
+              <strong>3</strong>
+            </div>
+            <div class="scale-row">
+              <span>MoE layers</span>
+              <strong>89</strong>
+              <strong>75</strong>
+            </div>
+            <div class="scale-row">
+              <span>Total experts</span>
+              <strong>160</strong>
+              <strong>256</strong>
+            </div>
+            <div class="scale-row">
+              <span>Active experts</span>
+              <strong>8 + 1 shared</strong>
+              <strong>8 + 1 shared</strong>
+            </div>
+          </section>
+
+          <aside class="architecture-callout">
+            <span>Discussion hook</span>
+            <strong>Why keep 3 dense layers before MoE?</strong>
+            <p>The appendix keeps this detail unchanged from GLM-4.5 while the expert count and hidden dimension grow.
+            </p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide content-slide image-slide" data-title="GLM-5 vs GLM-4.5">
+      <div class="slide-frame image-frame">
+        <header class="slide-header image-header">
+          <p class="eyebrow">Architecture Summary</p>
+          <h2>GLM-5 vs GLM-4.5</h2>
+        </header>
+
+        <figure class="full-figure">
+          <img src="./assets/architecture/glm4.5_vs_glm5.png"
+            alt="Architecture comparison diagram of GLM-5 and GLM-4.5">
+          <figcaption>Architecture visual summary; numeric comparison follows the paper appendix architecture table.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="slide content-slide image-slide" data-title="GLM-5 vs DeepSeek-V3.2">
+      <div class="slide-frame image-frame">
+        <header class="slide-header image-header">
+          <p class="eyebrow">Architecture Summary</p>
+          <h2>GLM-5 vs DeepSeek-V3.2</h2>
+        </header>
+
+        <figure class="full-figure deepseek-figure">
+          <img src="./assets/architecture/glm5_vs_deepseekv32.png"
+            alt="Architecture comparison diagram of GLM-5 and DeepSeek-V3.2">
+          <figcaption>Architecture visual comparison showing shared ingredients: MoE, MLA, DSA, and MTP.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="slide section-divider-slide" data-title="Pretraining Section">
+      <div class="section-divider-frame">
+        <p class="section-kicker">Section 2</p>
+        <h2>Pretraining</h2>
+        <p>Base data, mid-training, and the long-context curriculum.</p>
+      </div>
+    </section>
+
+    <section class="slide content-slide image-slide pipeline-image-slide" data-title="Training Pipeline">
+      <div class="slide-frame image-frame">
+        <header class="slide-header image-header">
+          <p class="eyebrow">Training / Overview</p>
+          <h2>Full training procedure</h2>
+        </header>
+
+        <figure class="full-figure pipeline-figure">
+          <img src="./assets/training/overall_pipeline_large.png" alt="Overall training pipeline of GLM-5">
+          <figcaption>Paper Figure 5: Overall training pipeline of GLM-5.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="slide content-slide training-data-slide" data-title="Pre-Training Data">
+      <div class="slide-frame training-data-frame">
+        <header class="slide-header training-data-header">
+          <p class="eyebrow">Training / Pretraining</p>
+          <h2>Pre-training Data: Squeezing the Web</h2>
+        </header>
+
+        <div class="pretraining-layout">
+          <aside class="training-corpus-card">
+            <span>Base model corpus</span>
+            <strong>27T</strong>
+            <p>tokens, starting from the GLM-4.5 pre-training pipeline with early priority on code and reasoning.</p>
+            <div class="corpus-note">Operational pattern: clean and deduplicate, score quality, then sample from
+              domain-specific pools.</div>
+            <div class="source-note">Sources: GLM-5 report; <a
+                href="https://kili-technology.com/blog/data-story-glm-model-family" target="_blank" rel="noreferrer">A
+                Data Story of the GLM Model Family: From GLM (2021) to GLM-5 (2026)</a>.
+            </div>
+          </aside>
+
+          <section class="training-domain-grid" aria-label="Pre-training data domains">
+            <article class="training-domain-card">
+              <span>Web</span>
+              <strong>General web text, filtered into useful pools</strong>
+              <div class="data-change-block">
+                <b>Includes</b>
+                <p>Web documents from the inherited GLM-4.5 web pipeline.</p>
+              </div>
+              <div class="data-change-block">
+                <b>GLM-5 refines</b>
+                <p>Adds a sentence-embedding quality selector and a knowledge-focused selector trained from
+                  Wikipedia entries plus LLM-labeled examples to recover long-tail knowledge.</p>
+              </div>
+            </article>
+
+            <article class="training-domain-card">
+              <span>Code</span>
+              <strong>Repositories plus code-containing web pages</strong>
+              <div class="data-change-block">
+                <b>Includes</b>
+                <p>Major code hosting snapshots and web pages that contain code.</p>
+              </div>
+              <div class="data-change-block">
+                <b>GLM-5 refines</b>
+                <p>Refreshes sources, expands code web collection, fixes Software Heritage metadata alignment,
+                  adds classifiers for lower-resource languages such as Scala, Swift, and Lua, and reaches <span
+                    class="term" tabindex="0"
+                    data-note="The paper reports a 28% increase after fuzzy deduplication of unique code tokens.">28%
+                    more</span> fuzzily deduplicated unique tokens.</p>
+              </div>
+            </article>
+
+            <article class="training-domain-card">
+              <span>Math &amp; Science</span>
+              <strong>STEM pages, books, and papers</strong>
+              <div class="data-change-block">
+                <b>Includes</b>
+                <p>High-quality math and science material from webpages, books, and academic papers.</p>
+              </div>
+              <div class="data-change-block">
+                <b>GLM-5 refines</b>
+                <p>Improves extraction and PDF parsing, scores candidates for educational value, uses <span class="term"
+                    tabindex="0"
+                    data-note="For long-context documents, GLM-5 develops a chunk-and-aggregate scoring algorithm to increase scoring accuracy.">chunk-and-aggregate
+                    scoring</span> for long documents, and filters out synthetic, AI-generated, or template-based
+                  data.</p>
+              </div>
+            </article>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide content-slide training-data-slide" data-title="Mid-Training Data">
+      <div class="slide-frame training-data-frame">
+        <header class="slide-header training-data-header">
+          <p class="eyebrow">Training / Midtraining</p>
+          <h2>Mid-training Data: Stretching Workflows</h2>
+        </header>
+
+        <div class="pretraining-layout">
+          <aside class="training-corpus-card midtraining-corpus-card">
+            <span>Mid-training corpus</span>
+            <strong>1.5T</strong>
+            <p>tokens after base pre-training, targeting long code, reasoning, long context, and agent data.</p>
+            <div class="corpus-note">As context grows, the mixture shifts toward long documents and synthetic agent
+              trajectories.</div>
+            <div class="source-note">Sources: GLM-5 report; <a
+                href="https://kili-technology.com/blog/data-story-glm-model-family" target="_blank" rel="noreferrer">A
+                Data Story of the GLM Model Family: From GLM (2021) to GLM-5 (2026)</a>.
+            </div>
+          </aside>
+
+          <section class="training-domain-grid" aria-label="Mid-training data domains">
+            <article class="training-domain-card">
+              <span>Context curriculum</span>
+              <strong>Progressive extension instead of one jump</strong>
+              <div class="data-change-block">
+                <b>Schedule</b>
+                <p>32K / 1T tokens -> 128K / 500B -> 200K / 50B.</p>
+              </div>
+              <div class="data-change-block">
+                <b>GLM-5 adds</b>
+                <p>A 200K stage beyond GLM-4.5's 128K maximum, improving ultra-long documents and complex multi-file
+                  codebases.</p>
+              </div>
+            </article>
+
+            <article class="training-domain-card">
+              <span>Long code</span>
+              <strong>Repo workflows as unified sequences</strong>
+              <div class="data-change-block">
+                <b>Structure</b>
+                <p>Repo files + commit diffs + GitHub issues + pull requests + relevant source files.</p>
+              </div>
+              <div class="data-change-block">
+                <b>Construction</b>
+                <p>Broader repo pool yields about 10M issue-PR pairs; stricter issue-level filtering leaves about 160B
+                  unique tokens.</p>
+              </div>
+            </article>
+
+            <article class="training-domain-card">
+              <span>Long context</span>
+              <strong>Natural documents plus synthetic recall</strong>
+              <div class="data-change-block">
+                <b>Natural</b>
+                <p>Books, papers, and long documents filtered by perplexity, deduplication, and length; knowledge-heavy
+                  domains are upsampled.</p>
+              </div>
+              <div class="data-change-block">
+                <b>Synthetic</b>
+                <p>Constructed examples create long-range dependencies. Similar texts are interleaved to reduce
+                  lost-in-the-middle, and MRCR-like recall data is added at 200K.</p>
+              </div>
+            </article>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide content-slide dsa-bridge-slide" data-title="DSA Adaptation Question">
+      <div class="slide-frame dsa-bridge-frame">
+        <header class="slide-header dsa-bridge-header">
+          <p class="eyebrow">Training / DSA Bridge</p>
+          <h2>After mid-training: 20B sparse adaptation tokens</h2>
+        </header>
+
+        <div class="dsa-bridge-layout">
+          <section class="dsa-bridge-fact">
+            <span>What the paper does</span>
+            <strong>MLA base -> DSA adaptation</strong>
+            <p>After mid-training, GLM-5 runs a short DSA warm-up, then a 20B-token sparse adaptation stage using the
+              mid-training data mixture and hyperparameters.</p>
+          </section>
+
+          <section class="dsa-bridge-question">
+            <span>Question for the paper</span>
+            <strong>Why not train with DSA for all of mid-training?</strong>
+            <p>We have framed DSA as reducing memory and compute. But sparse attention might also change quality: it
+              could
+              improve long-context focus, or it could make optimization harder before the model is ready.</p>
+          </section>
+        </div>
+
+        <p class="dsa-bridge-note">The report shows DSA closely matches MLA after adaptation; it does not isolate
+          whether
+          DSA itself improves final model quality beyond efficiency.</p>
+      </div>
+    </section>
+
+    <section class="slide section-divider-slide" data-title="Post-training Section">
+      <div class="section-divider-frame">
+        <p class="section-kicker">Section 3</p>
+        <h2>Post-training</h2>
+        <p>SFT, RL, On Policy Distillation.</p>
+      </div>
+    </section>
+
+    <section class="slide content-slide posttrain-slide" data-title="SFT Data">
+      <div class="slide-frame posttrain-frame">
+        <header class="slide-header posttrain-header">
+          <p class="eyebrow">Post-training / SFT</p>
+          <h2>SFT data: three buckets</h2>
+        </header>
+
+        <div class="sft-data-layout">
+          <section class="posttrain-card">
+            <span>General Chat</span>
+            <strong>Question answering, writing, role-play, translation, multi-turn, long context</strong>
+            <div class="posttrain-detail-block">
+              <b>Construction</b>
+              <p>Optimizes for a more logical and concise style. Role-play data covers more languages and
+                configurations,
+                then uses automatic and human filtering.</p>
+            </div>
+          </section>
+
+          <section class="posttrain-card">
+            <span>Reasoning</span>
+            <strong>Mathematical, programming, and scientific reasoning</strong>
+            <div class="posttrain-detail-block">
+              <b>Construction</b>
+              <p>Logical reasoning uses verifiable problems and rejection sampling. Math/science keeps prompts that are
+                challenging for GLM-4.7.</p>
+            </div>
+          </section>
+
+          <section class="posttrain-card">
+            <span>Coding &amp; Agent</span>
+            <strong>Frontend/backend code, tool calling, coding/search/general agents</strong>
+            <div class="posttrain-detail-block">
+              <b>Construction</b>
+              <p>Execution environments produce long-horizon trajectories, improved by expert RL and rejection sampling.
+                Wrong segments stay in context but are masked in the loss, so recovery behavior is learned without
+                imitating bad actions.</p>
+            </div>
+          </section>
+        </div>
+
+        <p class="posttrain-note">Not disclosed: exact SFT quantities, data source lists, and mixture proportions.</p>
+      </div>
+    </section>
+
+    <section class="slide content-slide posttrain-slide" data-title="SFT Chat Template">
+      <div class="slide-frame posttrain-frame thinking-frame">
+        <header class="slide-header posttrain-header">
+          <p class="eyebrow">Post-training / SFT Chat Template</p>
+          <h2>Thinking between actions</h2>
+        </header>
+
+        <div class="thinking-layout">
+          <figure class="thinking-figure">
+            <img src="./assets/posttraining/thinking_mode.png"
+              alt="GLM-5 interleaved thinking and preserved thinking diagram">
+            <figcaption>Paper Figure: Interleaved Thinking and Preserved Thinking.</figcaption>
+          </figure>
+
+          <section class="thinking-callouts" aria-label="GLM-5 thinking modes">
+            <article>
+              <span>Interleaved Thinking</span>
+              <p>Improves instruction following and generation quality by reasoning before actions.</p>
+            </article>
+            <article>
+              <span>Preserved Thinking</span>
+              <p>Reduces information loss and inconsistencies in long-horizon coding tasks.</p>
+            </article>
+            <article>
+              <span>Turn-level Thinking</span>
+              <p>Disable it for lightweight requests; enable it for complex tasks that need accuracy and stability.</p>
+            </article>
+            <div class="thinking-context-badge">
+              <strong>202,752</strong>
+              <span>max SFT context length</span>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide content-slide posttrain-slide" data-title="Reasoning RL">
+      <div class="slide-frame posttrain-frame">
+        <header class="slide-header posttrain-header">
+          <p class="eyebrow">Post-training / Reasoning RL</p>
+          <h2>Reasoning RL: verifiable, hard, mixed</h2>
+        </header>
+
+        <div class="rl-domain-grid">
+          <section class="posttrain-card">
+            <span>Math</span>
+            <strong>Open-source + vendor-built problems</strong>
+            <p>Difficulty filtering keeps prompts GLM-4.7 rarely solves or fails, while stronger teacher models can
+              still
+              solve them.</p>
+          </section>
+          <section class="posttrain-card">
+            <span>Science</span>
+            <strong>Same hard-problem filter</strong>
+            <p>Uses open-source and co-developed collections, focused on problems that are hard for the previous model
+              but
+              still verifiable.</p>
+          </section>
+          <section class="posttrain-card">
+            <span>Code</span>
+            <strong>Competitive + scientific coding</strong>
+            <p>Competitive tasks come from Codeforces, TACO, and SYNTHETIC-2-RL. Scientific coding is built by
+              decomposing
+              internal problems into minimal code implementations.</p>
+          </section>
+          <section class="posttrain-card">
+            <span>Tool-Integrated Reasoning</span>
+            <strong>STEM questions built for tools</strong>
+            <p>Reuses the harder math/science subset and adds vendor-built STEM questions explicitly designed to be
+              answered
+              with external tools.</p>
+          </section>
+        </div>
+
+        <div class="rl-summary-strip">
+          <p><strong>Reward:</strong> domain/source-specific judges or evaluation systems produce binary outcome
+            rewards.</p>
+          <p><strong>Mixture:</strong> the four domains are kept roughly balanced during RL.</p>
+          <p><strong>Effect:</strong> the paper reports stable, significant gains in each domain under the mixed
+            setting.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide content-slide posttrain-slide" data-title="Agentic RL">
+      <div class="slide-frame posttrain-frame">
+        <header class="slide-header posttrain-header">
+          <p class="eyebrow">Post-training / Agentic RL</p>
+          <h2>Agentic RL: async long-horizon rollouts</h2>
+        </header>
+
+        <div class="agentic-rl-layout">
+          <section class="posttrain-card posttrain-card-large">
+            <span>Why async?</span>
+            <strong>Synchronous RL wastes GPU time on long-horizon agents</strong>
+            <p>GLM-5 decouples inference and training. Rollout engines continuously generate trajectories, then batches
+              are
+              sent to the trainer.</p>
+            <p>A Multi-Task Rollout Orchestrator registers task services, controls task ratios, and supports over 1K
+              concurrent rollouts.</p>
+          </section>
+
+          <section class="agentic-stability-list" aria-label="Agentic RL stability mechanisms">
+            <article>
+              <span>TITO</span>
+              <p>Token-in-token-out avoids re-tokenization mismatch and preserves action-level correspondence.</p>
+            </article>
+            <article>
+              <span>Direct double-sided IS</span>
+              <p>Uses rollout log-probs and masks tokens outside a trust interval instead of tracking old checkpoints.
+              </p>
+            </article>
+            <article>
+              <span>Drop noisy samples</span>
+              <p>Remove stale off-policy trajectories and sandbox failures caused by environment collapse.</p>
+            </article>
+            <article>
+              <span>DP-aware routing</span>
+              <p>Routes each rollout to a stable DP rank to preserve KV-cache locality across turns.</p>
+            </article>
+          </section>
+        </div>
+
+        <p class="posttrain-note">Environment construction details move to the next section: SWE, terminal, search, and
+          slide-generation environments.</p>
+      </div>
+    </section>
+
+    <section class="slide content-slide posttrain-slide" data-title="General RL">
+      <div class="slide-frame posttrain-frame">
+        <header class="slide-header posttrain-header">
+          <p class="eyebrow">Post-training / General RL</p>
+          <h2>General RL: human-style alignment</h2>
+        </header>
+
+        <div class="general-rl-story">
+          <section class="general-objectives-panel">
+            <span>Step 1: define what “better assistant” means</span>
+            <h3>Three optimization objectives</h3>
+            <ol class="objective-list">
+              <li>
+                <strong>Foundational correctness</strong>
+                <p>First make responses usable: instruction following, logical consistency, factuality, hallucination
+                  reduction, and language quality.</p>
+              </li>
+              <li>
+                <strong>Emotional intelligence</strong>
+                <p>Then improve user experience: empathy, insightfulness, and a style closer to natural human
+                  communication.</p>
+              </li>
+              <li>
+                <strong>Task-specific quality</strong>
+                <p>Finally optimize specific categories such as writing, text processing, QA, role-playing, and
+                  translation.</p>
+              </li>
+            </ol>
+          </section>
+
+          <section class="general-method-panel">
+            <div class="reward-system-panel">
+              <span>Step 2: combine reward signals</span>
+              <h3>Hybrid reward system</h3>
+              <div class="reward-method-list">
+                <article>
+                  <b>Rule-based rewards</b>
+                  <p>Precise and interpretable, but only where deterministic rules exist.</p>
+                </article>
+                <article>
+                  <b>ORMs</b>
+                  <p>Efficient and low variance, but more vulnerable to reward hacking.</p>
+                </article>
+                <article>
+                  <b>GRMs</b>
+                  <p>More robust model-based evaluations, but higher variance.</p>
+                </article>
+              </div>
+            </div>
+
+            <div class="human-anchor-panel">
+              <span>Step 3: anchor style</span>
+              <h3>Human-written responses</h3>
+              <p>Expert responses are added as stylistic and qualitative anchors, because optimizing only on
+                model-generated outputs can drift toward verbose, formulaic, “model-like” patterns.</p>
+            </div>
+          </section>
+        </div>
+
+        <p class="posttrain-note">Not disclosed: exact reward recipes, data quantities, or mixture proportions.</p>
+      </div>
+    </section>
+
+    <section class="slide content-slide posttrain-slide" data-title="On-Policy Distillation">
+      <div class="slide-frame posttrain-frame">
+        <header class="slide-header posttrain-header">
+          <p class="eyebrow">Post-training / On-Policy Distillation</p>
+          <h2>On-policy distillation: reduce forgetting after staged RL</h2>
+        </header>
+
+        <div class="distill-compact-layout">
+          <figure class="distill-pipeline-figure">
+            <img src="./assets/training/overall_pipeline_large.png" alt="Overall GLM-5 training pipeline showing OPD">
+            <figcaption>Overall pipeline: OPD is the final refinement stage.</figcaption>
+          </figure>
+
+          <section class="distill-explainer">
+            <article class="distill-reason">
+              <span>Why OPD?</span>
+              <strong>Sequential RL can forget earlier skills</strong>
+              <p>Optimizing distinct objectives stage by stage can degrade capabilities acquired in earlier SFT and RL
+                stages.</p>
+            </article>
+
+            <div class="distill-step-list" aria-label="On-policy cross-stage distillation steps">
+              <article>
+                <span>1</span>
+                <p>Use final checkpoints from earlier stages as teacher models.</p>
+              </article>
+              <article>
+                <span>2</span>
+                <p>Sample prompts from the corresponding teachers' RL training sets and mix them.</p>
+              </article>
+              <article>
+                <span>3</span>
+                <p>Train from the teacher-current model gap; group size 1, batch size 1024.</p>
+              </article>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide section-divider-slide" data-title="Agent Environments Section">
+      <div class="section-divider-frame">
+        <p class="section-kicker">Section 4</p>
+        <h2>Agent Environments</h2>
+        <p>Long-horizon tasks, rollout data, and evaluation settings.</p>
+      </div>
+    </section>
+
+    <section class="slide content-slide agent-env-slide" data-title="Agent Environments Overview">
+      <div class="slide-frame agent-env-frame">
+        <header class="slide-header agent-env-header">
+          <p class="eyebrow">Agent Environments / Overview</p>
+          <h2>Turn open-ended agent work into executable feedback</h2>
+        </header>
+
+        <div class="agent-env-overview">
+          <section class="agent-env-flow" aria-label="Common environment construction pattern">
+            <article>
+              <span>Task</span>
+              <strong>Real or synthetic agent problem</strong>
+            </article>
+            <article>
+              <span>Context + tools</span>
+              <strong>Repository, terminal, web, browser, renderer</strong>
+            </article>
+            <article>
+              <span>Rollout</span>
+              <strong>Plan, act, observe, iterate</strong>
+            </article>
+            <article>
+              <span>Verifier</span>
+              <strong>Tests, evidence checks, rendering signals</strong>
+            </article>
+          </section>
+
+          <section class="agent-env-preview" aria-label="Environment families">
+            <article>
+              <span>SWE</span>
+            </article>
+            <article>
+              <span>Terminal</span>
+            </article>
+            <article>
+              <span>Search</span>
+            </article>
+            <article>
+              <span>Slide Generation</span>
+            </article>
+          </section>
+        </div>
+
+        <p class="agent-env-note">Context Management is covered separately as a Search inference technique, not as a
+          separate environment or dataset.</p>
+      </div>
+    </section>
+
+    <section class="slide content-slide agent-env-slide" data-title="SWE Environments">
+      <div class="slide-frame agent-env-frame">
+        <header class="slide-header agent-env-header">
+          <p class="eyebrow">Agent Environments / SWE</p>
+          <h2>SWE environments: from real issues to executable tests</h2>
+        </header>
+
+        <div class="swe-env-layout">
+          <section class="env-pipeline" aria-label="SWE environment construction pipeline">
+            <article>
+              <span>1</span>
+              <strong>Issue-PR pairs</strong>
+              <p>Real repository issues paired with pull requests.</p>
+            </article>
+            <article>
+              <span>2</span>
+              <strong>Clean issue statements</strong>
+              <p>Rule-based + LLM filters keep authentic issues; tasks are typed as bug fixes, features, refactors, or other changes.</p>
+            </article>
+            <article>
+              <span>3</span>
+              <strong>Runnable repo</strong>
+              <p>RepoLaunch-style setup analyzes install/dependencies, builds a runnable repo environment, and generates test commands.</p>
+            </article>
+            <article>
+              <span>4</span>
+              <strong>Test-case extraction</strong>
+              <p>LLM-generated log parsers read test outputs and extract F2P/P2P cases for verification.</p>
+            </article>
+          </section>
+
+          <aside class="env-metric-panel">
+            <span>Scale</span>
+            <strong>&gt;10k</strong>
+            <p>verifiable environments across thousands of repositories.</p>
+            <div class="env-language-list">
+              <b>9 languages</b>
+              <p>Python, Java, Go, C, C++, JavaScript, TypeScript, PHP, Ruby</p>
+            </div>
+          </aside>
+        </div>
+
+        <div class="swe-env-bottom">
+          <p><strong>Verifiable signal:</strong> executable F2P/P2P tests. F2P = fixes failing behavior; P2P = preserves existing behavior.</p>
+          <p><strong>Not specified:</strong> raw corpus size, task-type proportions, exact LLMs.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide content-slide agent-env-slide" data-title="Terminal Environments">
+      <div class="slide-frame agent-env-frame">
+        <header class="slide-header agent-env-header">
+          <p class="eyebrow">Agent Environments / Terminal</p>
+          <h2>Terminal environments: Docker tasks with validation</h2>
+        </header>
+
+        <div class="terminal-env-layout">
+          <section class="env-lane">
+            <span>Seed-data synthesis</span>
+            <h3>Seeds become Harbor tasks</h3>
+            <ol>
+              <li>Seeds come from SWE and terminal computer-use scenarios.</li>
+              <li>LLM brainstorms verifiable task drafts.</li>
+              <li>Construction agent writes Harbor tasks: description, Docker environment, tests.</li>
+              <li>Refine agent checks builds, spec/test match, and shortcut resistance.</li>
+            </ol>
+            <p class="env-lane-result">Thousands of diverse environments; Docker construction accuracy exceeds 90%.</p>
+          </section>
+
+          <section class="env-lane env-lane-alt">
+            <span>Web-corpus synthesis</span>
+            <h3>Code pages become self-verified tasks</h3>
+            <ol>
+              <li>Quality classifier keeps code-heavy technical pages.</li>
+              <li>Suitable pages are sampled by topic and difficulty for balance.</li>
+              <li>Coding agent gets the page, Harbor spec, and examples, then writes the task.</li>
+              <li>The agent runs Harbor validation and revises until checks pass.</li>
+            </ol>
+            <p class="env-lane-result">Only tasks that pass the self-verification loop enter the dataset.</p>
+          </section>
+        </div>
+
+        <div class="terminal-env-bottom">
+          <p><strong>Checkable artifact:</strong> Harbor task with description, Docker environment, and tests.</p>
+          <p><strong>Not specified:</strong> exact task counts per route, model identities, or validation pass rates.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide content-slide agent-env-slide" data-title="Search Environments">
+      <div class="slide-frame agent-env-frame">
+        <header class="slide-header agent-env-header">
+          <p class="eyebrow">Agent Environments / Search</p>
+          <h2>Search environments: multi-hop QA grounded in web evidence</h2>
+        </header>
+
+        <div class="search-env-layout">
+          <section class="wkg-panel">
+            <span>Data construction</span>
+            <h3>Web pages -> graph -> hard questions</h3>
+            <div class="wkg-steps">
+              <article>
+                <strong>1. Collect pages</strong>
+                <p>Early search-agent trajectories produce URLs; after deduplication, &gt;2M high-information pages remain.</p>
+              </article>
+              <article>
+                <strong>2. Build graph</strong>
+                <p>An LLM extracts entities, attributes, and relations, then the graph is cleaned for consistency.</p>
+              </article>
+              <article>
+                <strong>3. Ask from graph</strong>
+                <p>Low/mid-frequency entities seed multi-hop subgraphs, which are converted into hard QA tasks.</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="filter-funnel" aria-label="Search question filtering pipeline">
+            <span>Keep only hard, checkable questions</span>
+            <article>
+              <b>1</b>
+              <p>Drop questions a tool-free model solves in any of 8 attempts.</p>
+            </article>
+            <article>
+              <b>2</b>
+              <p>Drop questions an early search agent solves in a few steps.</p>
+            </article>
+            <article>
+              <b>3</b>
+              <p>Verifier checks answer-evidence consistency and rejects ambiguity, bad evidence, or wrong labels.</p>
+            </article>
+          </section>
+        </div>
+
+        <div class="search-env-bottom">
+          <p><strong>Verification:</strong> no unit tests. The answer must be uniquely supported by evidence across sources.</p>
+          <p><strong>Not specified:</strong> final QA count, exact models, or acceptance rate after filtering.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide content-slide agent-env-slide" data-title="Search Context Management">
+      <div class="slide-frame agent-env-frame">
+        <header class="slide-header agent-env-header">
+          <p class="eyebrow">Search Inference / Context Management</p>
+          <h2>Inference with Context Management for Search Agents</h2>
+        </header>
+
+        <div class="context-management-layout">
+          <section class="context-explainer">
+            <article class="context-problem-card">
+              <span>Problem</span>
+              <strong>Accuracy degrades when search histories grow past ~100k tokens.</strong>
+              <p>Tool observations dominate context and leave less room for continued reasoning.</p>
+            </article>
+
+            <div class="context-strategy-grid">
+              <article>
+                <span>Evaluation task</span>
+                <p>This is not a new environment. BrowseComp evaluates context-management strategies.</p>
+              </article>
+              <article>
+                <span>Agent loop</span>
+                <p>Question -> reasoning -> action -> observation, using search, open, find, python.</p>
+              </article>
+              <article>
+                <span>Keep-recent-k</span>
+                <p>Keep latest 5 rounds; replace older tool observations with an omitted-result marker.</p>
+              </article>
+              <article>
+                <span>Hierarchical Context Management</span>
+                <p>Combine Keep-recent-k with Discard-all once total context exceeds T=32k.</p>
+              </article>
+            </div>
+          </section>
+
+          <figure class="agent-env-figure context-figure">
+            <img src="./assets/agent-env/browsecomp_context_management.png"
+              alt="BrowseComp accuracy with different context management strategies">
+            <figcaption>x-axis = search step budget; y-axis = BrowseComp accuracy. Hierarchical Context Management frees
+              context for more steps; judge uses the official OpenAI prompt with o3-mini.
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide content-slide agent-env-slide" data-title="Slide Generation Environment">
+      <div class="slide-frame agent-env-frame">
+        <header class="slide-header agent-env-header">
+          <p class="eyebrow">Agent Environments / Slide Generation</p>
+          <h2>Slide generation: train on HTML, judge the rendered page</h2>
+        </header>
+
+        <div class="slidegen-layout">
+          <section class="slidegen-pipeline">
+            <span>Training loop</span>
+            <div class="slidegen-step-row">
+              <article>SFT teaches the model to emit HTML slide trajectories</article>
+              <article>RL scores each page with static, render-time, and perceptual checks</article>
+              <article>Rejection sampling turns the RL rewards into a data filter</article>
+              <article>Mask fine-tuning masks bad pages but keeps good pages in the same trajectory</article>
+            </div>
+
+            <div class="reward-levels">
+              <article>
+                <span>Level 1</span>
+                <strong>Static markup</strong>
+                <p>Parse HTML/CSS declarations: position, spacing, color, typography, saturation; block hallucinated or duplicate images.</p>
+              </article>
+              <article>
+                <span>Level 2</span>
+                <strong>Runtime rendering</strong>
+                <p>Distributed renderer measures DOM width/height, bounding boxes, overflow, and layout geometry.</p>
+              </article>
+              <article>
+                <span>Level 3</span>
+                <strong>Perceptual features</strong>
+                <p>Abnormal whitespace and compositional balance signals.</p>
+              </article>
+            </div>
+          </section>
+
+          <aside class="slidegen-side">
+            <figure class="agent-env-figure slidegen-figure">
+              <img src="./assets/agent-env/ppt_reward_hacking.png"
+                alt="Examples of reward hacking in slide RL training">
+              <figcaption>Why render-time checks matter: static rules can be gamed by hiding overflow or adding artificial spacing.</figcaption>
+            </figure>
+            <div class="slidegen-metrics">
+              <article>
+                <strong>40% -> 92%</strong>
+                <p>strict 16:9 compliance</p>
+              </article>
+              <article>
+                <strong>67.5%</strong>
+                <p>overall human win rate vs GLM-4.5</p>
+              </article>
+            </div>
+            <p class="slidegen-caveat"><strong>Not specified:</strong> exact dataset size, reward weights, model identity, or N in Best-of-N.</p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide section-divider-slide" data-title="Easter Eggs Section">
+      <div class="section-divider-frame">
+        <p class="section-kicker">Section 6</p>
+        <h2>Easter Eggs</h2>
+        <p>Pony Alpha and release-story details.</p>
+      </div>
+    </section>
+
+    <section class="slide content-slide easter-text-slide" data-title="Pony Alpha">
+      <div class="slide-frame easter-text-frame">
+        <header class="slide-header easter-text-header">
+          <p class="eyebrow">Easter Eggs</p>
+          <h2>Pony Alpha</h2>
+        </header>
+
+        <div class="easter-copy">
+          <p>The <strong>&quot;Pony Alpha&quot;</strong> experiment was indeed a pivotal moment for us. It was a bold
+            decision to release GLM-5 anonymously on OpenRouter, but the results have been incredibly validating. By
+            stripping away our brand name, we allowed the model's intrinsic capabilities to speak for themselves,
+            ensuring the feedback we received was pure and unbiased.</p>
+
+          <p>Here is a brief summary:</p>
+
+          <p>Within days, Pony Alpha became a sensation. Developers in the OpenRouter community began to notice its
+            exceptional performance, particularly in complex coding tasks, agentic workflows, and roleplay scenarios.
+          </p>
+
+          <p>Speculation was rampant, with many users guessing it was a leaked update from labs like Anthropic (Claude
+            Sonnet 5), a secret Grok release, or DeepSeek V4. A preliminary statistic shows that 25% of the users
+            guessed
+            it was Claude Sonnet 5, 20% DeepSeek, 10% Grok, and the rest GLM-5.</p>
+
+          <p>The eventual confirmation that it was indeed our GLM-5 was a profound moment for us, effectively silencing
+            doubts about whether Chinese LLMs could compete at the frontier level.</p>
+
+          <p>The success of Pony Alpha (GLM-5) is not just about raw benchmarks; it signifies a shift in our focus
+            towards engineering-level reliability.</p>
+
+          <p>This anonymous release allowed us to transcend geopolitical biases. The community embraced the model
+            because
+            it worked.</p>
+
+          <p>While we celebrate this success, we must remain pragmatic. The gap between open-weight models and the
+            absolute proprietary frontier is narrowing, but the race is far from over. Our focus remains steadfast on
+            pushing the boundaries of what is possible with scalable, efficient, and intelligent systems.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide section-divider-slide thank-you-slide" data-title="Thank You">
+      <div class="section-divider-frame">
+        <h2>Thank You!</h2>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="figure-modal" id="figure-modal" hidden>
+    <div class="figure-modal-backdrop" data-modal-close></div>
+    <section class="figure-modal-panel" role="dialog" aria-modal="true" aria-labelledby="figure-modal-title">
+      <button class="modal-close" type="button" data-modal-close aria-label="Close figure viewer"></button>
+      <h2 id="figure-modal-title"></h2>
+      <div class="figure-modal-body"></div>
+      <p class="figure-modal-caption"></p>
+    </section>
+  </div>
+
+  <nav class="deck-controls" aria-label="Slide navigation">
+    <button class="nav-button prev" type="button" data-action="prev" title="Previous slide"
+      aria-label="Previous slide"></button>
+    <span class="slide-counter" aria-label="Slide count">1 / 1</span>
+    <button class="nav-button next" type="button" data-action="next" title="Next slide"
+      aria-label="Next slide"></button>
+    <button class="nav-button fullscreen" type="button" data-action="fullscreen" title="Enter fullscreen"
+      aria-label="Enter fullscreen"></button>
+  </nav>
+  <div class="progress" aria-hidden="true">
+    <div class="progress-bar"></div>
+  </div>
+
+  <script src="./deck.js"></script>
+</body>
+
+</html>
